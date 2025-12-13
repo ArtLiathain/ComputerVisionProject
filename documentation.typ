@@ -16,11 +16,6 @@ December 2025
 
 #pagebreak()
 
-= Abstract 
-#v(1em)
-Our project looks into the use of a cascaded shallow diffusion image generation pipeline for the CIFAR-10 dataset, which aims to distribute the three steps of coarse content generation, upsampling and refinement into three lightweight stages. The first one is a shallow conditional diffusion model working at a 16x16 resolution. The second step is a trained pixelShuffle upsampler that converts 16x16 images to 32x32. The last stage is a Vision Transformer (ViT) based refiner which is particularly thoughtful for 32x32 images since it uses global, attention based cleaning. A very modular structure is employed for the system so that every single stage can be replaced by a configuration object allowing automatic ablation across diffusion hyperparameters, model widths and depths, and teacher forcing schedules. The training process is gradual: the diffusion model is first trained, then the upsampler and refiner are trained together, and finally, all three stages are finetuned together. The performance is assessed by Kernel Inception Distance (KID), per stage mean squared error, and a perceptual LPIPS loss on the final stage, and also by qualitative visual inspection.
-
-#pagebreak()
 
 = Table of Contents
 #outline()
@@ -34,35 +29,58 @@ Our project looks into the use of a cascaded shallow diffusion image generation 
 
 = Introduction
 #v(1em)
+Recent advances in generative modeling have shown that high-quality image synthesis can be achieved not only through large, monolithic architectures, but also through the composition of multiple simpler models.
+Cascaded generative approaches decompose the image generation task into a sequence of stages, where each stage is responsible for adding structure, resolution, or detail.
+By progressively refining an image rather than generating it in a single step, these models can reduce training complexity, improve interpretability, and allow individual components to be analyzed or modified independently.
 
-We focus on unconditional image generation on the CIFAR-10 dataset and implement a three stage “cascaded shallow diffusion” pipeline. The model begins with a diffusion model that creates a 16x16 image, and then the compact output is upsampled to 32x32 with a pixelshuffle that is trained, and finally, the upsampled image is improved through a Vision Transformer refiner. Each stage is intentionally shallow, and a configuration cell controls which concrete model is used at each stage (for example, diffusion versus a simple generator for the coarse stage, or a convolutional refiner versus a ViT refiner for the final stage). This makes it easy to switch architectures and run ablation studies by changing configuration values rather than rewriting the training code.
+Each stage serves a different purpose, the first is a generation model to generate a coarse 16x16 resolution image.
+The second stage is a learned upsampler that upsamples the 16x16 coarse output images to 32x32.
+The last stage is a refiner which refines the output of the learned upsampler using perception loss to an accurate 32x32 representation.
+These models cascade from one to another to approximate a CIFAR-10 image while each retaining a shallow number of layers favouring wide by shallow models over the traditional deep and narrow of current state of the art.
 
-Goals:
-- To implement and train a working diffusion based generator on CIFAR-10
-- To design a cascaded architecture where each stage can be independently ablated
+The goals of this paper are:
+- To implement and train a working cascading image generator on CIFAR-10
+- To implement a wide variety of models to compare in the different stages
 - To compare results across model size, training schedule and sample quality, using Kernel Inception Distance (KID) and qualitative visual inspection
 
-#pagebreak()
 
 = Background and Literature Review
+Within this project a wide variety of models have been selected due to their prominence in state of the art computer vision. This paper assumes a base understanding of computer vision models as the focus of the paper is cascading image generation.
+== Generation models 
 
-== Diffusion models
+=== Denoising Autoencoders (DAE)
+Denoising Autoencoders learn to reconstruct clean data from corrupted inputs, forcing the model to capture meaningful structure in the data distribution rather than simply memorizing inputs. By training on progressively noisier samples, DAEs learn a mapping that moves samples toward higher-density regions of the data manifold. This denoising objective forms the conceptual foundation for diffusion-based generative models, where generation is performed through iterative noise removal.
 
-*Need to find a paper for this section*
+=== Diffusion Models
 
-#pagebreak()
-== Cascaded and multi-stage architectures
+Diffusion models define a generative process as the reversal of a gradual noising procedure applied to training data. During training, noise is incrementally added to data over a sequence of timesteps, while the model learns to predict and remove this noise. At inference time, the model generates samples by starting from pure noise and iteratively denoising, producing high-quality and diverse images with stable training dynamics.
+
+=== ResNet
+
+Residual Networks introduce skip connections that allow information to bypass intermediate layers, mitigating issues such as vanishing gradients in deep neural networks. By learning residual functions rather than direct mappings, ResNets enable more stable optimization and improved feature propagation. These properties make them well-suited for generative models, where preserving low-level spatial information across layers is critical.
+
+== Upsampler Models (Keep it very short)
+=== ResNet (Upsampler Context)
+
+When used in upsampling stages, ResNet architectures help preserve coarse structural information while progressively adding higher-frequency details. Residual connections allow the model to focus on learning refinement rather than reconstructing the entire image, improving both stability and output fidelity.
+
+=== PixelShuffle
+
+PixelShuffle is an efficient upsampling operation that rearranges channel information into spatial resolution, increasing image size without introducing checkerboard artifacts common in transposed convolutions. This approach enables computationally efficient super-resolution while maintaining spatial consistency in generated images.
+
+== Refiner Models
+
+
+=== Vision Transformers
+
+Vision Transformers (ViTs) model images as sequences of patches and use self-attention to capture long-range dependencies across the entire image. This global receptive field allows refiners to reason about spatial relationships and semantic consistency, making ViTs particularly effective for correcting structural inconsistencies and improving perceptual coherence.
+
+== Cascaded models (This is the only one that matters)
 
 
 *Need to find a paper for this section.*
 
 
-#pagebreak()
-
-== Vision Transformers as refiners
-
-
-*Need to find a paper for this section*
 
 #pagebreak()
 
@@ -70,53 +88,46 @@ Goals:
 
 == Dataset and task
 #v(1em)
-Our project uses the CIFAR-10 dataset, which consists of 50,000 training and 10,000 test images (RGB) of size 32x32 across 10 object categories. In this project, the labels are ignored, and the task is image generation. Images are loaded and converted to tensors in (0,1). No significant augmentation is applied, as the quality of generative images is the primary concern rather than classification performance.
-#v(1em)
-== Cascaded shallow diffusion pipeline
-#v(1em)
-The generator is implemented as a three stage pipeline, which changes a high resolution tensor to:
+Our project uses the CIFAR-10 dataset, which consists of 60,000 training images of size 32x32 across 10 object categories. In this project, the labels are ignored, and the task is image generation. Images are loaded and converted to tensors in (0,1). No significant augmentation is applied, as the quality of generative images is the primary concern rather than classification performance. 
 
-- The diffusion stage: 16x16 coarse image
+CIFAR-10 was the chosen dataset as it allows quick generation due to the 32x32 size, it is also a heavily tested framework which allows for easier comparisons with the current state of the art.
+#v(1em)
+== Cascaded Model Training Schedule
+#v(1em)
+The generator is implemented as a three stage pipeline, which base input is a 16x16 noisy image:
+
+- The generation stage: 16x16 coarse image
 - The upsampler stage: 32x32 upsampled image
 - The refiner stage: 32x32 refined image
 
-A small "BaseStage" subclass (DiffusionStage, UpsamplerStage, RefinerStage) wraps each stage and the subclass includes the ways of preprocessing inputs, what the stage returns during the forward pass, and the ways of deriving training targets from the original image. This abstraction makes it possible to easily switch the different underlying models (like changing from a simple convolutional refiner to ViT refiner).
-#v(1em)
-=== Stage 1: Diffusion
-#v(1em)
-The generator for the coarse images is actually the "DiffusionBlock", which is encapsulated by the "DiffusionStage". The stage takes the input image of size 32x32 and first reduces its size to 16x16 by using bilinear interpolation. A random timestep is selected, after which Gaussian noise is added using the pre computed schedules. The stage keeps in its memory both the sample with noise and the actual noise. Inside the diffusion block is an initial 3x3 convolution that projects the input into a fixed channel width, then residual UNet blocks which are conditioned on a sinusoidal timestep embedding are applied. The network then gives a noise prediction of the same shape. The stage loss is computed as the mse between the predicted noise and the ground truth noise.
-#v(1em)
-=== Stage 2: Upsampler
-#v(1em)
-The second stage is a PixelShuffle Upsampler which is a learned upsampler and is also enclosed in UpsamplerStage. The upsampler is responsible for transforming an RGB image of 16x16 pixels to an RGB image of 32x32 pixels. The structure of the network consists of the following components: 
-- A head 3x3 convolution that filters the input from 3 channels to a hidden width
-- A PixelShuffle upsampling block that  doubles the spatial resolution
-- A final 3x3 convolution that conducts the reverse process and translates back to 3 channels
+All stages inherit from Baseclass, which enforces they implement preprocess() and forward(). These functions are essential to be able to properly handle the different models as each model handles inputs and training differently.This abstraction makes it possible to easily switch the different underlying models (like changing from a simple convolutional refiner to ViT refiner).
 
-The objective of the upsampler during the training session is the original ground truth picture that has been downsized to the same resolution as the output. The teacher forcing schedule determines whether the input to this stage is the ground truth image downsampled to 16x16 (teacher forcing) or the 16x16 output generated by the diffusion stage.
 #v(1em)
-=== Stage 3: Refiner
-
-The last stage employs a Vision Transformer refiner to process the 32x32 image generated in the second stage. The architecture is based on the conventional ViT structure, which divides the input image into non-overlapping patches, uses a Conv2d patch embedding to project each patch to an embedding vector, and adds a learnable class token at the beginning. The positional embeddings are added, and the sequence of tokens goes through a series of transformer encoder blocks (Transformer block) comprising multihead self attention and feed forward MLPs. The refiner, does not take the class token as output. The class token is thrown away after the transformer stack, and only the patch tokens are kept. These tokens are then reshaped back into a 2D feature map and transposed convolution decoded to a 3 channels image using a convolution whose kernel size and stride correspond to the patch size.
-
 == Training
 #v(1em)
 The training has three stages:
 
-- *Stage 1: coarse diffusion *  
+=== Stage 1: Coarse Downsampled Image Generation
+The first stage of training is the "warm up" stage for the coarse model. This is required as the following refiner and upsampler layers are based on the output and the early learning outputs would propagate errors throughout the pipeline. The loss function for the generation stage is MSE.
 
-Only coarse diffusion. The isolation of the diffusion stage for a specific number of epochs is being the main characteristic of this phase. The coarse model's parameters are set to be trained while keeping the upsampler and refiner stages in their frozen state. The predicting noise and true noise at randomly sampled timesteps being MSE include the loss for this stage. 
 #v(1em)
 
-- *Stage 2: upsampler and refiner.*  
+=== Stage 2: Upsampler and Refiner
 
-The coarse diffusion stage is put on hold and only the upsampler and refiner are trained. A teacher forcing schedule step by step lowers the possibility of giving the ground truth downsampled image to the upsampler and at the same time, increases the use of the coarse stage output that is made up of the raw images. The losses in this phase include: an MSE loss for the upsampler output compared to a resized ground truth image, a refiner loss that is comprised of MSE and a LPIPS.
+In stage 2, coarse generation stage is frozen and the upsampler and refiner models are trained. Due to the unstable nature of the generation stage a teacher forcing schedule is used.
+This decides if the refiner and upsampler get a ground truth downsampled image or the coarse stage output. 
+The scheduler for this lowers the possibility of giving the ground truth to the upsampler linearly over the number of stage 2 epochs. The start and end points are configurable.
+The losses in this phase include: an MSE loss for the upsampler output compared to a resized ground truth image, a refiner loss that is comprised of MSE and a perception loss.
 #v(1em)
 
-- *Stage 3: Fine tunning.*  
-During the last stage, all three stages get unfreezed and get trained together with the same loss combinations. To stabilize learning, a separate teacher forcing schedule is applied.
+=== Stage 3: Fine Tuning
+During the last stage, all three stages get unfrozen and are trained together with the same loss combinations.
+In this stage the gradients are not detached from the coarse stage allowing the gradients to flow from the upsampler and refiner to the coarse model to allow for more fine tuned training of the weights to work in tandem with the cascading models.
 
-Each phase is assigned its optimizer and learning rate scheduler, the settings are made through a configuration. The Config class is responsible for defining the core hyperparameters, such as diffusion schedule, the number of layers in the diffusion block, the dimensions and heights of the upsampler and refiner, and the teacher forcing start and end probabilities.
+=== Stage Information
+
+Each phase is assigned its optimizer and learning rate scheduler, the settings are made through a configuration. The Config class is responsible for defining the core hyperparameters, the number of layers in the coarse block, the dimensions and heights of the upsampler and refiner, and the teacher forcing start and end probabilities. 
+This configuration was designed with ablations studies in mind to allow for comprehensive testing and comparison.
 #v(1em)
 
 == Evaluation metrics
@@ -131,7 +142,6 @@ Each phase is assigned its optimizer and learning rate scheduler, the settings a
 
 *talk about baseline config*
 
-#pagebreak()
 
 == Ablation studies
 
