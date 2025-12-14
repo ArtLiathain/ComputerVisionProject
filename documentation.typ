@@ -130,12 +130,6 @@ Each phase is assigned its optimizer and learning rate scheduler, the settings a
 This configuration was designed with ablations studies in mind to allow for comprehensive testing and comparison.
 #v(1em)
 
-== Evaluation metrics
-#v(1em)
-*Talk about: Kernel Inception Distance (KID), LPIPS loss, Time per epochs, FID score, Config used to create*
-
-#pagebreak()
-
 = Experimental analysis and evaluation
 
 == Baseline configuration
@@ -146,6 +140,24 @@ This configuration was designed with ablations studies in mind to allow for comp
 == Ablation studies
 
 * ablation studies*
+
+== Evaluation metrics
+
+=== Kernel Inception Distance (KID)
+#v(1em)
+KID quantifies the correspondence of the generated images to the real CIFAR-10 images in the Inception network's feature space by means of their distributions. A lower value of KID indicates that the generated samples are, on average, even closer to the real image, as far as the visual features learnt are concerned. In our case, KID is calculated regularly throughout the training period by using a constant number of real and generated samples, and we present both the final and mean KID over the recorded assessments.
+
+=== LPIPS (perceptual distance)
+#v(1em)
+LPIPS uses deep features (VGG) instead of raw pixel differences to evaluate the similarity between the two images. This is useful because images can look very similar even if their pixel values differ slightly. In our processing, LPIPS is incorporated into the refiner loss alongside MSE, encouraging outputs that are not only numerically close to the target but also visually coherent.
+
+=== Time per epoch
+#v(1em)
+The duration of the epoch is recorded to capture computational cost and training efficiency. This helps put improvements in KID and visual quality into perspective against training time, which is important when model size or diffusion schedule is varied across configurations.
+
+=== Configuration tracking
+#v(1em)
+The configuration used for every experiment is logged in detail (for example, the parameters of the diffusion schedule, types of stage model, channel widths, number of layers/blocks). This ensures results are reproducible and supports ablation studies by linking changes in metrics directly to specific architectural or training modifications.
 
 == Results
 
@@ -163,3 +175,4 @@ This configuration was designed with ablations studies in mind to allow for comp
 
 1. PixelShuffle: https://docs.pytorch.org/docs/stable/generated/torch.nn.PixelShuffle.html 
 
+#bibliography("references.bib")
