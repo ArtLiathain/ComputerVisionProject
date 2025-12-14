@@ -121,13 +121,86 @@ This configuration was designed with ablations studies in mind to allow for comp
 = Experimental analysis and evaluation
 
 == Baseline configuration
+The baseline configuration for all empirical tests is: 
+#table(
+  columns: (auto, auto),
+  inset: 6pt,
+  align: (left, left),
+  stroke: 0.6pt,
 
-*talk about baseline config*
+  [*Category*], [*Configuration*],
 
+  [Dataset],
+  [
+    *Batch size:* 128
+  ],
+
+  [Diffusion Parameters],
+  [
+    *Timesteps (T):* 25 \\
+    *Beta start:* 1e-4 \\
+    *Beta end:* 0.02 \\
+    *Timestep embedding dim:* 32
+    *Time embedding:* 128
+  ],
+
+  [Coarse Generator],
+  [
+    *Resolution:* 16 × 16 \\
+    *Model type:* Diffusion \\
+    *Input channels:* 3 \\
+    *Output channels:* 128 \\
+    *Latent dimension:* 256 \\
+    *Layers:* 6 \\
+    *Skip connection every:* 2 layers \\
+    *DAE sigma:* 0.5 \\
+  ],
+
+  [Upsampler],
+  [
+    *Model type:* PixelShuffle \\
+    *Input channels:* 3 \\
+    *Hidden channels:* 256 \\
+    *Upscale factor:* 2 \\
+    *Residual blocks:* 2
+  ],
+
+  [Refiner],
+  [
+    *Model type:* Vision Transformer (ViT) \\
+    *Input channels:* 3 \\
+    *Feature channels:* 256 \\
+    *Residual blocks:* 2
+  ],
+
+  [Training Schedule],
+  [
+    *Coarse epochs:* 35 \\
+    *Upsampler + Refiner epochs:* 35 \\
+    *Joint training epochs:* 30
+  ],
+
+  [Optimization],
+  [
+    *Learning rate (all stages):* 2e-4 \\
+    *LR step size:* 15 \\
+    *LR decay (gamma):* 0.5
+  ],
+
+  [Teacher Forcing],
+  [
+    *Phase 2:* 0.9 → 0.1 \\
+    *Phase 3:* 0.1 → 0.0
+  ],
+)
+
+These were selected based on earlier tests and served as a baseline for all future tests
 
 == Ablation studies
+The goal of the ablation study was to identify if there was a correlation between parameter count and performance and waht combination of cascading models produce the best results.
 
-* ablation studies*
+To conduct fair tests the only features that were altered between tests were, the models used in the cascasing Ex from diffusion -> resnet ->  vit to dae -> pixel shuffle -> vit, and the number of hidden channels in each stage going from 256 to 128.
+These were selected to allow a diverse range of models to be tested and to explore the correlation between parameter count and models when different cascades were introduced.
 
 == Evaluation metrics
 
@@ -162,4 +235,3 @@ The configuration used for every experiment is logged in detail (for example, th
 = References
 #bibliography("references.bib")
 
-#bibliography("references.bib")
