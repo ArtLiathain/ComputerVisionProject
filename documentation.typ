@@ -43,6 +43,16 @@ The goals of this paper are:
 - To implement a wide variety of models to compare in the different stages
 - To compare results across model size, training schedule and sample quality, using Kernel Inception Distance (KID) and qualitative visual inspection
 
+#figure(
+  table(
+    columns: 2,
+    stroke: none,
+    image("images/2025-12-14-20:51:48.png", width: 90%),
+    image("images/2025-12-14-20:55:16.png", width: 90%),
+  ),
+  caption: "Generated and and target samples."
+)
+
 
 = Background and Literature Review
 Within this project a wide variety of models have been selected due to their prominence in state of the art computer vision. This paper assumes a base understanding of computer vision models as the focus of the paper is cascading image generation.
@@ -197,10 +207,10 @@ The baseline configuration for all empirical tests is:
 These were selected based on earlier tests and served as a baseline for all future tests
 
 == Ablation studies
-The goal of the ablation study was to identify if there was a correlation between parameter count and performance and waht combination of cascading models produce the best results.
+The goal of the ablation study was to identify if there was a correlation between parameter count and performance and what combination of cascading models produce the best results.
 
-To conduct fair tests the only features that were altered between tests were, the models used in the cascasing Ex from diffusion -> resnet ->  vit to dae -> pixel shuffle -> vit, and the number of hidden channels in each stage going from 256 to 128.
-These were selected to allow a diverse range of models to be tested and to explore the correlation between parameter count and models when different cascades were introduced.
+To conduct fair tests the only features that were altered between tests were, the models used in the cascading Ex from diffusion -> resnet ->  vit to dae -> pixel shuffle -> vit.
+These were selected to allow a diverse range of models to be tested and to explore the correlation between parameter count and models between different cascades.
 
 == Evaluation metrics
 
@@ -210,7 +220,7 @@ KID quantifies the correspondence of the generated images to the real CIFAR-10 i
 
 === LPIPS (perceptual distance)
 #v(1em)
-LPIPS uses deep features (VGG) instead of raw pixel differences to evaluate the similarity between the two images. It uses a pretrained model to calculate the perception loss. This is useful because MSE favours aveage values but that leads to heavy blur and homogenous colours over sharp edged. In our processing, LPIPS is incorporated into the refiner loss alongside MSE, encouraging outputs that are not only numerically close to the target but also visually coherent.
+LPIPS uses deep features (VGG) instead of raw pixel differences to evaluate the similarity between the two images. It uses a pretrained model to calculate the perception loss. This is useful because MSE favours average values but that leads to heavy blur and homogeneous colours over sharp edged. In our processing, LPIPS is incorporated into the refiner loss alongside MSE, encouraging outputs that are not only numerically close to the target but also visually coherent.
 
 === Time per epoch
 #v(1em)
@@ -223,8 +233,13 @@ The duration of the epoch is recorded to capture computational cost and training
 #pagebreak()
 
 = Conclusion
+In light of the results it is clear that there is no strong bearing on the types of models used in sequence to generate images. This suggests that although there have been methods that effectively use cascading models to great effect @ho_cascaded_2021, there is a need for specific integration methods between models rather than an abstract stage based approach.
+When each stage is defined abstractly, there can only be a weak abstract connection between each model reducing the effectiveness of the approach. This paper highlights shows that while there is merit in cascading models, there is a need for care when selecting each models to ensure they connect and flow well from one to another sharing gradients to allow for more accurate training.
 
-*conclusion here*
+Overall, this work shows that cascaded generative models can serve as a viable and flexible framework for image synthesis, but their effectiveness depends on thoughtful architectural and training choices. Future improvements are likely to come from tighter stage integration and more principled design rather than simply increasing model complexity.
+
+
+
 
 #pagebreak()
 
