@@ -44,13 +44,13 @@ The goals of this paper are:
 - To compare results across model size, training schedule and sample quality, using Kernel Inception Distance (KID) and qualitative visual inspection
 
 #figure(
-  table(
-    columns: 2,
-    stroke: none,
-    image("images/2025-12-14-20:51:48.png", width: 90%),
-    image("images/2025-12-14-20:55:16.png", width: 90%),
-  ),
-  caption: "Generated and and target samples."
+    image("images/Real.png", width: 80%),
+  caption: "Generated samples."
+)
+
+#figure(
+    image("images/Target.png", width: 80%),
+  caption: "Target samples."
 )
 
 
