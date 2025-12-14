@@ -49,39 +49,27 @@ Within this project a wide variety of models have been selected due to their pro
 == Generation models 
 
 === Denoising Autoencoders (DAE)
-Denoising Autoencoders learn to reconstruct clean data from corrupted inputs, forcing the model to capture meaningful structure in the data distribution rather than simply memorizing inputs. By training on progressively noisier samples, DAEs learn a mapping that moves samples toward higher-density regions of the data manifold. This denoising objective forms the conceptual foundation for diffusion-based generative models, where generation is performed through iterative noise removal.
+Denoising Autoencoders learn to reconstruct clean data from corrupted inputs, forcing the model to capture meaningful structure in the data distribution rather than simply memorizing inputs @bengio_generalized_2013. By training on progressively noisier samples, DAEs learn a mapping that moves samples toward higher-density regions of the data manifold. This denoising objective forms the conceptual foundation for diffusion-based generative models, where generation is performed through iterative noise removal.
 
 === Diffusion Models
-
-Diffusion models define a generative process as the reversal of a gradual noising procedure applied to training data. During training, noise is incrementally added to data over a sequence of timesteps, while the model learns to predict and remove this noise. At inference time, the model generates samples by starting from pure noise and iteratively denoising, producing high-quality and diverse images with stable training dynamics.
+Diffusion models define a generative process as the reversal of a gradual noising procedure applied to training data @ho_denoising_2020. During training, noise is incrementally added to data over a sequence of timesteps, while the model learns to predict and remove this noise. The general architecture used for diffusion models are Unets @salimans_pixelcnn_2017 which are a natural choice to map corrupted data to reverse process parameters. At inference time, the model generates samples by starting from pure noise and iteratively denoising, producing high-quality and diverse images with stable training dynamics.
 
 === ResNet
+Residual Networks introduce skip connections that allow information to bypass intermediate layers, mitigating issues such as vanishing gradients in deep neural networks. By learning residual functions rather than direct mappings, ResNets enable more stable optimization and improved feature propagation @thakur_efficient_2023. These properties make them well-suited for generative models, where preserving low-level spatial information across layers is critical.
 
-Residual Networks introduce skip connections that allow information to bypass intermediate layers, mitigating issues such as vanishing gradients in deep neural networks. By learning residual functions rather than direct mappings, ResNets enable more stable optimization and improved feature propagation. These properties make them well-suited for generative models, where preserving low-level spatial information across layers is critical.
-
-== Upsampler Models (Keep it very short)
-=== ResNet (Upsampler Context)
-
-When used in upsampling stages, ResNet architectures help preserve coarse structural information while progressively adding higher-frequency details. Residual connections allow the model to focus on learning refinement rather than reconstructing the entire image, improving both stability and output fidelity.
-
+== Upsampler Models
 === PixelShuffle
-
-PixelShuffle is an efficient upsampling operation that rearranges channel information into spatial resolution, increasing image size without introducing checkerboard artifacts common in transposed convolutions. This approach enables computationally efficient super-resolution while maintaining spatial consistency in generated images.
+PixelShuffle is an efficient upsampling operation that rearranges channel information into spatial resolution, increasing image size without introducing checkerboard artifacts common in transposed convolutions @zamzam_pixelshuffler_2025. This approach enables computationally efficient super-resolution while maintaining spatial consistency in generated images.
 
 == Refiner Models
 
-
 === Vision Transformers
+Vision Transformers (ViTs) model images as sequences of patches and use self-attention to capture long-range dependencies across the entire image @dosovitskiy_image_2021. This global receptive field allows refiners to reason about spatial relationships and semantic consistency, making ViTs particularly effective for correcting structural inconsistencies and improving perceptual coherence.
 
-Vision Transformers (ViTs) model images as sequences of patches and use self-attention to capture long-range dependencies across the entire image. This global receptive field allows refiners to reason about spatial relationships and semantic consistency, making ViTs particularly effective for correcting structural inconsistencies and improving perceptual coherence.
+== Cascaded diffusion models 
+Cascaded generative models approach image synthesis by breaking the generation process into multiple sequential stages, each operating at an increasing level of resolution and detail @ho_cascaded_2021. Prior work has shown that generating images in this progressive manner simplifies the learning problem, as early stages focus on global structure while later stages specialize in adding fine-grained details. In the context of diffusion models, cascades typically consist of an initial low-resolution generator followed by learned super-resolution models that condition on the outputs of previous stages. More broadly, cascaded approaches highlight how complex image distributions can be approximated through a composition of simpler models rather than a single, highly complex network, providing both practical performance benefits and increased interpretability.
 
-== Cascaded models (This is the only one that matters)
-
-
-*Need to find a paper for this section.*
-
-
-
+This is an approach with merit but is prone to issues such as error propagation throughout the pipeline. There are many ways in which this has been approached, teacher forcing, conditional augmentation @ho_cascaded_2021 to name a few are approaches used to manage the loss carrying from one stage to the next during training. While results have been shown for cascaded models there is much room for growth and exploration such as alternative models that only diffusion which would allow more diverse methods of training.
 #pagebreak()
 
 = Method
@@ -172,7 +160,6 @@ The configuration used for every experiment is logged in detail (for example, th
 #pagebreak()
 
 = References
-
-1. PixelShuffle: https://docs.pytorch.org/docs/stable/generated/torch.nn.PixelShuffle.html 
+#bibliography("references.bib")
 
 #bibliography("references.bib")
