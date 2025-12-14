@@ -156,7 +156,7 @@ The baseline configuration for all empirical tests is:
 
   [Coarse Generator],
   [
-    *Resolution:* 16 × 16 \\
+    *Resolution:* 16 x 16 \\
     *Model type:* Diffusion \\
     *Input channels:* 3 \\
     *Output channels:* 128 \\
@@ -228,7 +228,48 @@ The duration of the epoch is recorded to capture computational cost and training
 
 == Results
 
-*Add tables*
+#table(
+  columns: (auto, auto, auto, auto, auto),
+  inset: 6pt,
+  align: (left, left, left, left, left),
+  stroke: 0.6pt,
+
+  [*Configuration name*], [*Total params*], [*Number layers*], [*Final KID*], [*Total mean loss*],
+
+  [Diffusion + PixelShuffle + ViT], [8466441], [55], [0.166], [0.1649],
+  [Diffusion + ResNet + ViT],       [9058569], [63], [0.171], [0.1644],
+  [Diffusion + Linear + ViT],       [6104073], [47], [0.151], [0.1612],
+
+  [ResNet + ResNet + ViT],          [8731785], [61], [0.153], [0.09175],
+  [ResNet + PixelShuffle + ViT],    [8139657], [53], [0.159], [0.09177],
+  [ResNet + Linear + ViT],          [5777289], [45], [0.150], [0.0891],
+
+  [DAE + ResNet + ViT],             [8731785], [61], [0.165], [0.09202],
+  [DAE + PixelShuffle + ViT],       [8139657], [53], [0.146], [0.09204],
+  [DAE + Linear + ViT],             [5777289], [45], [0.172], [0.0886],
+)
+
+=== KID across configurations
+#image("kid_across_configs.png", width: 80%)
+=== Layer count across configurations
+#image("LayerCountvsKID.png", width: 80%)
+=== Parameter count vs KID
+#image("ParametercountvsKID.png", width: 80%)
+
+*Labels:*
+
+- *Config 0* - Diffusion + PixelShuffle + ViT  
+- *Config 1* - Diffusion + ResNet + ViT  
+- *Config 2* - Diffusion + Simple Upsampler + ViT  
+
+- *Config 3* - ResNet + ResNet + ViT  
+- *Config 4* - ResNet + PixelShuffle + ViT  
+- *Config 5* - ResNet + Simple Upsampler + ViT  
+
+- *Config 6* - Denoising Autoencoder + ResNet + ViT  
+- *Config 7* - Denoising Autoencoder + PixelShuffle + ViT  
+- *Config 8* - Denoising Autoencoder + Simple Upsampler + ViT  
+
 
 #pagebreak()
 
