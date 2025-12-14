@@ -210,15 +210,11 @@ KID quantifies the correspondence of the generated images to the real CIFAR-10 i
 
 === LPIPS (perceptual distance)
 #v(1em)
-LPIPS uses deep features (VGG) instead of raw pixel differences to evaluate the similarity between the two images. This is useful because images can look very similar even if their pixel values differ slightly. In our processing, LPIPS is incorporated into the refiner loss alongside MSE, encouraging outputs that are not only numerically close to the target but also visually coherent.
+LPIPS uses deep features (VGG) instead of raw pixel differences to evaluate the similarity between the two images. It uses a pretrained model to calculate the perception loss. This is useful because MSE favours aveage values but that leads to heavy blur and homogenous colours over sharp edged. In our processing, LPIPS is incorporated into the refiner loss alongside MSE, encouraging outputs that are not only numerically close to the target but also visually coherent.
 
 === Time per epoch
 #v(1em)
 The duration of the epoch is recorded to capture computational cost and training efficiency. This helps put improvements in KID and visual quality into perspective against training time, which is important when model size or diffusion schedule is varied across configurations.
-
-=== Configuration tracking
-#v(1em)
-The configuration used for every experiment is logged in detail (for example, the parameters of the diffusion schedule, types of stage model, channel widths, number of layers/blocks). This ensures results are reproducible and supports ablation studies by linking changes in metrics directly to specific architectural or training modifications.
 
 == Results
 
